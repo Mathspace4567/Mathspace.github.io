@@ -1,1 +1,122 @@
-javascript:(function(){var slots=JSON.parse(localStorage.getItem('wii-eta-slots'))||{};var slotNames=Object.keys(slots);var currentPanel=null;alert('Click an icon on the webpage to set position');if(slotNames.length>0){var choice=prompt('Save slots:\n\n'+slotNames.map(function(s,i){return(i+1)+'. '+s}).join('\n')+'\n\nEnter slot number to load, or leave blank to create new');if(choice&&slotNames[parseInt(choice)-1]){var pos=slots[slotNames[parseInt(choice)-1]];openIframe(pos.x,pos.y);return;}}var isSelecting=true;document.body.style.cursor='crosshair';function clickHandler(e){if(!isSelecting)return;e.preventDefault();e.stopPropagation();isSelecting=false;document.body.style.cursor='auto';document.removeEventListener('click',clickHandler,true);var rect=e.target.getBoundingClientRect();var x=Math.round(rect.left);var y=Math.round(rect.top);var highlightEl=e.target;highlightEl.style.outline='3px solid #238636';highlightEl.style.outlineOffset='2px';if(confirm('Position: ('+x+', '+y+')\n\nUse this position?')){var slotName=prompt('Enter save slot name:');if(slotName){slots[slotName]={x:x,y:y};localStorage.setItem('wii-eta-slots',JSON.stringify(slots));openIframe(x,y,highlightEl)}else{highlightEl.style.outline='none'}}else{highlightEl.style.outline='none'}}document.addEventListener('click',clickHandler,true);function openIframe(x,y,highlightEl){if(currentPanel)return;var panelX=16;var panelY,panelHeight;if(y<138){panelY=y;panelHeight='calc(100vh-'+y+'px)'}else{panelY=0;panelHeight='100vh'}var style=document.createElement('style');style.innerHTML='#wii-eta-panel{position:fixed;top:'+panelY+'px;left:'+panelX+'px;width:calc(100% - 32px);height:'+panelHeight+';background:rgba(255,255,255,0.7);backdrop-filter:blur(10px);z-index:999999;overflow:hidden;border:1px solid rgba(255,255,255,0.3);border-radius:12px;transition:opacity 0.2s}#wii-eta-panel.fullscreen{top:0;height:100vh;width:100vw;left:0;border-radius:0}#wii-eta-frame{width:100%;height:100%;border:none}#controls{position:absolute;top:10px;right:10px;display:flex;gap:8px;z-index:10000}.ctrl-btn{width:40px;height:40px;background:#238636;color:white;border:none;border-radius:50%;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;transition:background 0.2s}.ctrl-btn:hover{background:#1f6835}';document.head.appendChild(style);var panel=document.createElement('div');panel.id='wii-eta-panel';currentPanel=panel;var controls=document.createElement('div');controls.id='controls';var opacityBtn=document.createElement('button');opacityBtn.className='ctrl-btn';opacityBtn.innerHTML='◐';var opacityState=1;opacityBtn.onclick=function(){opacityState=opacityState===1?0.3:1;panel.style.opacity=opacityState;opacityBtn.innerHTML=opacityState===1?'◐':'◑'};var menuBtn=document.createElement('button');menuBtn.className='ctrl-btn';menuBtn.innerHTML='☰';menuBtn.onclick=function(){var slotNames=Object.keys(slots);var menuChoice=prompt('Slots:\n\n'+slotNames.map(function(s,i){return(i+1)+'. '+s}).join('\n')+'\n\n(Enter slot number to load)');if(menuChoice&&slotNames[parseInt(menuChoice)-1]){var pos=slots[slotNames[parseInt(menuChoice)-1]];if(highlightEl){highlightEl.style.outline='none'}panel.remove();style.remove();currentPanel=null;openIframe(pos.x,pos.y)}};var closeBtn=document.createElement('button');closeBtn.className='ctrl-btn';closeBtn.innerHTML='✕';closeBtn.onclick=function(){panel.remove();style.remove();currentPanel=null;if(highlightEl){highlightEl.style.outline='none'}};controls.appendChild(opacityBtn);controls.appendChild(menuBtn);controls.appendChild(closeBtn);panel.appendChild(controls);var frame=document.createElement('iframe');frame.id='wii-eta-frame';frame.src='https://calcsolver.github.io/Wii/';frame.allow='fullscreen';panel.appendChild(frame);document.body.appendChild(panel)}})();
+javascript:(function(){
+    if(document.getElementById('wii-eta-panel')){
+        document.getElementById('wii-eta-panel').remove();
+        return;
+    }
+
+    alert("📍 Click anywhere on the Education Perfect page to place the Wii ETA window");
+
+    var isSelecting = true;
+    document.body.style.cursor = 'crosshair';
+
+    function clickHandler(e){
+        if(!isSelecting) return;
+        
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        isSelecting = false;
+        document.body.style.cursor = 'default';
+        document.removeEventListener('click', clickHandler, true);
+
+        var x = Math.round(e.clientX - 240); // center the panel
+        var y = Math.round(e.clientY - 40);
+
+        // Highlight the clicked area briefly
+        var highlight = document.createElement('div');
+        highlight.style.position = 'fixed';
+        highlight.style.left = (e.clientX - 10) + 'px';
+        highlight.style.top = (e.clientY - 10) + 'px';
+        highlight.style.width = '20px';
+        highlight.style.height = '20px';
+        highlight.style.border = '3px solid #238636';
+        highlight.style.borderRadius = '50%';
+        highlight.style.pointerEvents = 'none';
+        highlight.style.zIndex = '99999998';
+        document.body.appendChild(highlight);
+        setTimeout(() => highlight.remove(), 800);
+
+        openWiiPanel(x, y);
+    }
+
+    document.addEventListener('click', clickHandler, true);
+
+    function openWiiPanel(x, y){
+        var style = document.createElement('style');
+        style.innerHTML = `
+            #wii-eta-panel{
+                position:fixed;
+                left:${x}px;
+                top:${y}px;
+                width:480px;
+                height:620px;
+                background:#fff;
+                border:4px solid #182552;
+                border-radius:12px;
+                box-shadow:0 15px 40px rgba(0,0,0,0.4);
+                z-index:99999999;
+                overflow:hidden;
+                display:block;
+            }
+            #wii-eta-header{
+                background:#182552;
+                color:white;
+                padding:12px 16px;
+                font-weight:bold;
+                font-size:16px;
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                cursor:move;
+            }
+            #wii-eta-frame{
+                width:100%;
+                height:calc(100% - 48px);
+                border:none;
+            }
+        `;
+        document.head.appendChild(style);
+
+        var panel = document.createElement('div');
+        panel.id = 'wii-eta-panel';
+
+        var header = document.createElement('div');
+        header.id = 'wii-eta-header';
+        header.innerHTML = `Wii ETA Helper <span style="cursor:pointer;font-size:22px;" onclick="document.getElementById('wii-eta-panel').remove()">✕</span>`;
+        panel.appendChild(header);
+
+        var iframe = document.createElement('iframe');
+        iframe.id = 'wii-eta-frame';
+        iframe.src = 'https://wii-eta.vercel.app/';
+        panel.appendChild(iframe);
+
+        document.body.appendChild(panel);
+
+        // Draggable (mouse + touch)
+        let dragging = false, offsetX, offsetY;
+        header.addEventListener('mousedown', e => {
+            if(e.target.tagName === 'SPAN') return;
+            dragging = true;
+            offsetX = e.clientX - panel.offsetLeft;
+            offsetY = e.clientY - panel.offsetTop;
+        });
+        header.addEventListener('touchstart', e => {
+            dragging = true;
+            offsetX = e.touches[0].clientX - panel.offsetLeft;
+            offsetY = e.touches[0].clientY - panel.offsetTop;
+        });
+
+        document.addEventListener('mousemove', e => {
+            if(!dragging) return;
+            panel.style.left = (e.clientX - offsetX) + 'px';
+            panel.style.top = (e.clientY - offsetY) + 'px';
+        });
+        document.addEventListener('touchmove', e => {
+            if(!dragging) return;
+            panel.style.left = (e.touches[0].clientX - offsetX) + 'px';
+            panel.style.top = (e.touches[0].clientY - offsetY) + 'px';
+        });
+
+        document.addEventListener('mouseup', () => dragging = false);
+        document.addEventListener('touchend', () => dragging = false);
+    }
+})();
